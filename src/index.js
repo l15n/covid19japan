@@ -468,16 +468,53 @@ function drawPrefectureTrajectoryChart(prefectures) {
         },
         []
       );
-      const cumulativeConfirmedFromMinimum = _.filter(
+
+      const indexOfMinimum = _.findIndex(cumulativeConfirmed, function (value) {
+        return value >= minimumConfirmed;
+      });
+
+      console.log("min index " + indexOfMinimum);
+      const cumulativeConfirmedFromMinimum = _.slice(
         cumulativeConfirmed,
-        function (value) {
-          return value >= minimumConfirmed;
-        }
+        indexOfMinimum
       );
+
+      const percentChange = _.reduce(
+        cumulativeConfirmedFromMinimum,
+        function (result, value, index, values) {
+          if (index === 0) {
+            return [];
+          } else {
+            if (value !== 0) {
+              const prevValue = values[index - 1];
+              const diffValue = value - prevValue;
+              const ratio = (100.0 * diffValue) / prevValue;
+              console.log(
+                `Values: ${prevValue} ${diffValue} ${ratio} from ${values}`
+              );
+              result.push(ratio);
+            } else {
+              result.push(0);
+            }
+            return result;
+          }
+        },
+        []
+      );
+
+      console.log(percentChange);
+      console.log(prefecture.dailyConfirmedCount);
+      const dailyConfirmedCountFromMinimum = _.slice(
+        prefecture.dailyConfirmedCount,
+        indexOfMinimum
+      );
+
       t[prefecture.name] = {
         name: prefecture.name,
         name_ja: prefecture.name_ja,
         confirmed: prefecture.confirmed,
+        dailyConfirmed: dailyConfirmedCountFromMinimum,
+        percentChange: percentChange,
         cumulativeConfirmed: cumulativeConfirmedFromMinimum,
         lastIndex: cumulativeConfirmedFromMinimum.length - 1,
       };
@@ -487,7 +524,9 @@ function drawPrefectureTrajectoryChart(prefectures) {
   );
 
   const columns = _.map(Object.values(trajectories), function (prefecture) {
-    return [prefecture.name].concat(prefecture.cumulativeConfirmed);
+    //return [prefecture.name].concat(prefecture.cumulativeConfirmed);
+    console.log(prefecture.percentChange);
+    return [prefecture.name].concat(prefecture.percentChange);
   });
 
   const regions = _.mapValues(trajectories, function (prefecture) {
@@ -531,7 +570,7 @@ function drawPrefectureTrajectoryChart(prefectures) {
     },
     axis: {
       y: {
-        min: minimumConfirmed,
+        //min: minimumConfirmed,
         padding: {
           bottom: 0,
         },
